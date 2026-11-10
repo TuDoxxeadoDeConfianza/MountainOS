@@ -1,0 +1,15 @@
+{
+  "name": "debian-macos-iwa",
+  "version": "1.0.0",
+  "description": "macOS-themed GNOME Debian running inside an Isolated Web App",
+  "type": "module",
+  "scripts": {
+    "bundle": "wbn bundle dist -o build/app.wbn",
+    "sign": "wbn-sign -i build/app.wbn -k ed25519-key.pem -o build/debian-macos.swbn",
+    "build": "npm run bundle && npm run sign"
+  },
+  "devDependencies": {
+    "wbn": "^0.3.0",
+    "wbn-sign": "^0.2.0"
+  }
+}
