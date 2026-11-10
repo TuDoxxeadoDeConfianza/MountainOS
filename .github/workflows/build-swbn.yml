@@ -1,0 +1,51 @@
+name: Build Isolated Web App (.swbn)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install IWA Packaging Tools
+        run: |
+          npm install -g wbn wbn-sign
+          npm install
+
+      - name: Prepare Web Assets
+        run: |
+          mkdir -p dist
+          cp -r public/* dist/
+          chmod +x scripts/build-debian-image.sh
+          # Run the Debian image build (or place a prebuilt minimal ISO in dist/)
+          ./scripts/build-debian-image.sh
+
+      - name: Generate Ed25519 Signing Key
+        run: |
+          openssl genpkey -algorithm Ed25519 -out ed25519-key.pem
+
+      - name: Package Signed Web Bundle (.swbn)
+        run: |
+          mkdir -p build
+          # 1. Package assets into standard Web Bundle
+          wbn bundle dist -o build/app.wbn
+          # 2. Sign with Ed25519 key to create Isolated Web App (.swbn)
+          wbn-sign -i build/app.wbn -k ed25519-key.pem -o build/debian-macos.swbn
+
+      - name: Upload .swbn Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-macos-swbn
+          path: build/debian-macos.swbn
+          retention-days: 7
